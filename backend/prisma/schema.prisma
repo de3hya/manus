@@ -1,0 +1,115 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  password      String
+  currency      String    @default("USD")
+  avatar        String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  transactions  Transaction[]
+  budgets       Budget[]
+  categories    Category[]
+  inventoryItems InventoryItem[]
+  stockMovements StockMovement[]
+}
+
+model Transaction {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String
+  amount        Float
+  type          String    // "income" | "expense"
+  category      String
+  date          DateTime
+  notes         String?
+  paymentMethod String?
+  receiptUrl    String?
+  isRecurring   Boolean   @default(false)
+  recurringFreq String?   // "daily" | "weekly" | "monthly"
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Budget {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category   String
+  amount     Float
+  month      Int
+  year       Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  type      String   // "income" | "expense"
+  icon      String?
+  color     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model InventoryItem {
+  id           String          @id @default(cuid())
+  userId       String
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  sku          String?
+  category     String
+  unit         String
+  supplier     String?
+  location     String?
+  imageUrl     String?
+  notes        String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  sizes        InventorySize[]
+  movements    StockMovement[]
+}
+
+model InventorySize {
+  id            String        @id @default(cuid())
+  itemId        String
+  item          InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  sizeLabel     String        // e.g. "S", "M", "L" or "10cm", "20cm"
+  quantity      Float
+  minThreshold  Float         @default(0)
+  purchasePrice Float
+  sellingPrice  Float?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model StockMovement {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemId    String
+  item      InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  sizeLabel String
+  type      String        // "IN" | "OUT"
+  quantity  Float
+  date      DateTime
+  reference String?
+  notes     String?
+  createdAt DateTime      @default(now())
+}
